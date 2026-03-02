@@ -1,0 +1,11 @@
+PyQt6>=6.5.0
+noisereduce>=3.0.0
+scipy>=1.11.0
+numpy<2,>=1.24.0
+soundfile>=0.12.0
+pydub>=0.25.1
+pyqtgraph>=0.13.0
+sounddevice>=0.4.6
+deepfilternet>=0.5.6; python_version<"3.12"
+torch==2.1.2; python_version<"3.12"
+torchaudio==2.1.2; python_version<"3.12"
