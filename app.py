@@ -152,7 +152,8 @@ class AudioProcessor:
         if n <= 0 or n >= 1:
             return data
         sos = butter(order, n, btype=btype, output='sos')
-        return sosfilt(sos, data).astype(np.float32)
+        result = sosfilt(sos, data)
+        return np.asarray(result, dtype=np.float32)
 
     def _compress(self, data, amt):
         th = 0.3 * (1 - amt * 0.5)
@@ -176,7 +177,7 @@ class AudioProcessor:
         w0 = f0 / nyq
         b, a = iirpeak(w0, q)
         sos = tf2sos(b, a)
-        bp = sosfilt(sos, data).astype(np.float32)
+        bp = np.asarray(sosfilt(sos, data), dtype=np.float32)
         gain = 10 ** (gain_db / 20.0) - 1.0
         return (data + gain * bp).astype(np.float32)
 
@@ -776,9 +777,12 @@ class App(QMainWindow):
         return f"{App._fmt(cur)} / {App._fmt(total)}"
 
     def _bind_shortcuts(self):
-        QShortcut(QKeySequence("Space"), self, activated=self._toggle_play_pause)
-        QShortcut(QKeySequence("Ctrl+O"), self, activated=self._on_load_click)
-        QShortcut(QKeySequence("Ctrl+S"), self, activated=self._export_selection)
+        s1 = QShortcut(QKeySequence("Space"), self)
+        s1.activated.connect(self._toggle_play_pause)
+        s2 = QShortcut(QKeySequence("Ctrl+O"), self)
+        s2.activated.connect(self._on_load_click)
+        s3 = QShortcut(QKeySequence("Ctrl+S"), self)
+        s3.activated.connect(self._export_selection)
 
     def _toggle_play_pause(self):
         if not self.proc.loaded:
@@ -901,7 +905,7 @@ class App(QMainWindow):
 
     def _run_denoise(self):
         """Run noisereduce in a background thread."""
-        if not self.proc.loaded:
+        if not self.proc.loaded or self.proc.original is None:
             return
         if self._worker is not None and self._worker.isRunning():
             # Already running, will re-queue on completion
@@ -1164,13 +1168,13 @@ class App(QMainWindow):
         self._nr_debounce.start()
         self._msg("⚡ Traffic Horns preset applied", "#d29922")
 
-    def closeEvent(self, event):
+    def closeEvent(self, a0):
         try:
             sd.stop()
         except Exception:
             pass
         self._stop_playback_cursor()
-        super().closeEvent(event)
+        super().closeEvent(a0)
 
 
 # ─────────────────────────────────────────────
